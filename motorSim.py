@@ -1,11 +1,42 @@
 #!/usr/bin/env python3
 
+from math import pi
+
 
 class SolidMotor:
     def __init__(self, grains, propellant, nozzle):
         self.grains = grains
         self.propellant = propellant
         self.nozzle = nozzle
+
+    def simulate(self):
+        pressure = 14.7
+        self.propellant.mass = (pi/4 * self.grains.diameter**2 - pi/4 * self.grains.core_diameter**2) * \
+                self.grains.length * self.grains.num * self.propellant.density
+
+        throatArea = self.nozzle.throat_diameter**2 * pi/4
+        dt = 0.0001
+        time = 0
+        pressure_data = []
+        time_data = []
+        while 1:
+            burnArea = (pi/4 * self.grains.diameter**2 - pi/4 * self.grains.core_diameter**2) * 2 * self.grains.num + \
+                       self.grains.core_diameter * pi * self.grains.length * self.grains.num
+
+            amount_burned = self.propellant.a * pressure ** self.propellant.n * dt
+
+            pressure = (burnArea / throatArea * self.propellant.density * self.propellant.cstar * self.propellant.a*12/386.06) ** \
+                       (1 / (1 - self.propellant.n))
+
+            self.grains.core_diameter += amount_burned*2
+            self.grains.length -= amount_burned*2
+
+
+            time += dt
+            pressure_data.append(pressure)
+            time_data.append(time)
+            if self.grains.core_diameter >= self.grains.diameter:
+                break
 
 
 class Grains:
@@ -40,3 +71,4 @@ if __name__ == '__main__':
     grains = Grains(num=3, length=9.5, diameter=5.014, core_diameter=2)
 
     motor = SolidMotor(grains, prop, nozzle)
+    motor.simulate()
